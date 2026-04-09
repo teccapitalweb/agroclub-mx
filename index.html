@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgroClub MX</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+  // ════════════════════════════════════════════════════
+  //  CONFIGURACIÓN DE FIREBASE — proyecto: agroclub-mx
+  //  Obtén estos datos en:
+  //  Firebase Console → agroclub-mx → Configuración del proyecto → Tu app web
+  // ════════════════════════════════════════════════════
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCa6zt7YD3QUzGxyPky0zPPfjQwhtYMeTw",
+    authDomain:        "agroclub-mx.firebaseapp.com",
+    projectId:         "agroclub-mx",
+    storageBucket:     "agroclub-mx.firebasestorage.app",
+    messagingSenderId: "231737548143",
+    appId:             "1:231737548143:web:6651621c2cbad8a31a9c9a"
+  };
+  firebase.initializeApp(firebaseConfig);
+</script>
+
+<style>
+:root {
+  --verde:       #1a6b3a;
+  --verde-claro: #2d9652;
+  --verde-neon:  #3ec76e;
+  --tierra:      #c4792a;
+  --bg:          #f4f6f3;
+  --surface:     #ffffff;
+  --border:      #e2e8e0;
+  --text:        #1c2b1e;
+  --muted:       #6b7c6e;
+  --sidebar-w:   200px;
+  --rsidebar-w:  276px;
+  --font:        'Space Grotesk', sans-serif;
+  --font-body:   'DM Sans', sans-serif;
+  --radius:      12px;
+  --radius-sm:   8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font-body); background:var(--bg); color:var(--text); }
+
+/* ── LOGIN ── */
+#loginScreen {
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,#0f4d28 0%,#1a6b3a 55%,#2d9652 100%);
+  z-index:999;
+}
+.login-box {
+  background:var(--surface); border-radius:20px; padding:40px;
+  width:380px; max-width:95vw;
+  box-shadow:0 32px 80px rgba(0,0,0,.35);
+  animation:slideUp .35s ease;
+}
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+.login-logo { text-align:center; margin-bottom:28px; }
+.login-logo .ico { font-size:42px; }
+.login-logo h1 { font-family:var(--font); font-size:22px; font-weight:800; color:var(--verde); margin:6px 0 2px; }
+.login-logo p  { font-size:12px; color:var(--muted); }
+.form-label { display:block; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
+.form-input {
+  width:100%; padding:11px 14px; border-radius:var(--radius-sm);
+  border:1.5px solid var(--border); background:var(--bg);
+  font-family:var(--font-body); font-size:14px; color:var(--text);
+  outline:none; transition:border .15s; margin-bottom:14px;
+}
+.form-input:focus { border-color:var(--verde-claro); }
+.login-btn {
+  width:100%; padding:13px; background:var(--verde); color:#fff;
+  border:none; border-radius:var(--radius-sm); font-family:var(--font);
+  font-size:15px; font-weight:700; cursor:pointer; transition:background .15s;
+}
+.login-btn:hover { background:var(--verde-claro); }
+.login-btn:disabled { opacity:.6; cursor:not-allowed; }
+.login-error { color:#e53935; font-size:12px; margin-top:8px; display:none; }
+.reset-link { text-align:center; margin-top:12px; font-size:12px; color:var(--muted); cursor:pointer; }
+.reset-link:hover { color:var(--verde); }
+.admin-hint {
+  margin-top:16px; padding:10px 14px; background:#e8f5ed;
+  border-radius:8px; font-size:11px; color:var(--verde); display:none;
+}
+
+/* ── APP ── */
+#app { display:none; }
+
+/* TOPBAR */
+.topbar {
+  position:fixed; top:0; left:0; right:0; height:52px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; z-index:100;
+}
+.brand { display:flex; align-items:center; gap:10px; }
+.brand-ico { width:32px; height:32px; background:var(--verde); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+.brand-name { font-family:var(--font); font-weight:700; font-size:15px; color:var(--verde); }
+.plan-tag { font-size:10px; font-weight:700; background:var(--verde-neon); color:#fff; padding:2px 8px; border-radius:20px; }
+.topbar-right { display:flex; align-items:center; gap:14px; }
+.avatar { width:32px; height:32px; border-radius:50%; background:var(--verde); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:13px; }
+.user-info .name { font-size:13px; font-weight:600; }
+.user-info .role { font-size:11px; color:var(--muted); }
+.user-chip { display:flex; align-items:center; gap:8px; padding:4px 8px; border-radius:8px; cursor:pointer; transition:background .15s; }
+.user-chip:hover { background:var(--bg); }
+.logout-btn { font-size:12px; color:var(--muted); cursor:pointer; border:none; background:none; padding:4px 8px; border-radius:6px; transition:all .15s; }
+.logout-btn:hover { color:#e53935; background:#fef2f2; }
+
+/* SIDEBAR */
+.sidebar {
+  position:fixed; top:52px; left:0; bottom:0; width:var(--sidebar-w);
+  background:var(--surface); border-right:1px solid var(--border);
+  padding:16px 12px; overflow-y:auto; z-index:90;
+}
+.nav-section { font-size:9px; font-weight:700; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; padding:4px 8px 2px; margin-top:10px; }
+.nav-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:7px 10px; border-radius:var(--radius-sm); cursor:pointer;
+  font-size:13px; font-weight:500; transition:all .15s; color:var(--text);
+}
+.nav-item:hover { background:var(--bg); }
+.nav-item.active { background:#e8f5ed; color:var(--verde); }
+.nav-badge { font-size:10px; font-weight:700; background:var(--tierra); color:#fff; padding:1px 6px; border-radius:10px; }
+
+/* MAIN */
+.main {
+  margin-left:var(--sidebar-w); margin-right:var(--rsidebar-w);
+  margin-top:52px; padding:24px;
+}
+
+/* RSIDEBAR */
+.rsidebar {
+  position:fixed; top:52px; right:0; bottom:0; width:var(--rsidebar-w);
+  background:var(--surface); border-left:1px solid var(--border);
+  padding:16px; overflow-y:auto; z-index:90; display:flex; flex-direction:column; gap:12px;
+}
+
+/* HERO */
+.hero-banner {
+  background:linear-gradient(135deg,var(--verde) 0%,#0f4d28 100%);
+  border-radius:var(--radius); padding:28px; color:#fff; margin-bottom:22px;
+  position:relative; overflow:hidden;
+}
+.hero-banner::before { content:'🌾'; position:absolute; right:24px; top:50%; transform:translateY(-50%); font-size:72px; opacity:.15; }
+.hero-greeting { font-family:var(--font); font-size:22px; font-weight:700; margin-bottom:4px; }
+.hero-sub { font-size:13px; opacity:.75; margin-bottom:16px; }
+.hero-stats { display:flex; gap:10px; flex-wrap:wrap; }
+.stat-pill { background:rgba(255,255,255,.15); backdrop-filter:blur(8px); padding:8px 14px; border-radius:8px; text-align:center; border:1px solid rgba(255,255,255,.2); }
+.stat-pill .num { font-family:var(--font); font-size:20px; font-weight:700; line-height:1; }
+.stat-pill .lbl { font-size:10px; opacity:.7; margin-top:2px; }
+
+/* CONTENT CARDS */
+.content-card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:20px; overflow:hidden; }
+.section-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 0; margin-bottom:12px; }
+.section-title { font-family:var(--font); font-size:15px; font-weight:700; display:flex; align-items:center; gap:6px; }
+.content-item { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); transition:background .15s; cursor:pointer; }
+.content-item:last-child { border-bottom:none; }
+.content-item:hover { background:var(--bg); }
+.item-thumb { width:42px; height:42px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.thumb-video { background:#fde8d8; }
+.thumb-pdf   { background:#fef3cd; }
+.thumb-live  { background:#fde8f4; }
+.item-info { flex:1; min-width:0; }
+.item-title { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+.item-meta  { font-size:11px; color:var(--muted); }
+.item-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.tag-nuevo  { font-size:10px; font-weight:700; background:#e8f5ed; color:var(--verde-claro); padding:2px 8px; border-radius:10px; }
+.tag-visto  { font-size:10px; font-weight:700; background:#f0f0f0; color:var(--muted); padding:2px 8px; border-radius:10px; }
+.tag-proximo{ font-size:10px; font-weight:700; background:#fff3e0; color:var(--tierra); padding:2px 8px; border-radius:10px; }
+.ver-btn { font-size:11px; color:var(--verde-claro); cursor:pointer; font-weight:600; border:none; background:none; }
+
+/* VIEWS */
+.view { display:none; }
+.view.active { display:block; }
+
+/* WIDGETS */
+.widget { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.widget-dark { background:var(--text); color:#fff; border-color:var(--text); }
+.widget-header { padding:12px 14px 0; }
+.widget-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:4px; }
+.widget-dark .widget-label { color:rgba(255,255,255,.5); }
+.widget-title { font-family:var(--font); font-size:14px; font-weight:700; }
+.widget-sub   { font-size:11px; color:var(--muted); margin-top:2px; }
+.widget-dark .widget-sub { color:rgba(255,255,255,.6); }
+.countdown { display:flex; gap:6px; padding:12px 14px; }
+.cd-unit { background:rgba(255,255,255,.1); border-radius:6px; padding:6px 10px; text-align:center; flex:1; }
+.cd-num { font-family:var(--font); font-size:20px; font-weight:700; line-height:1; }
+.cd-lbl { font-size:9px; opacity:.6; text-transform:uppercase; margin-top:2px; }
+.widget-btn { display:block; width:calc(100% - 28px); margin:0 14px 14px; padding:9px; border-radius:8px; border:none; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:700; transition:all .15s; }
+.btn-verde   { background:var(--verde-neon); color:#fff; }
+.btn-verde:hover { background:#30b05a; transform:translateY(-1px); }
+.btn-tierra  { background:var(--tierra); color:#fff; }
+.btn-morado  { background:#7c3aed; color:#fff; }
+.wa-widget { padding:14px; }
+.wa-dot { width:10px; height:10px; border-radius:50%; background:#25D366; display:inline-block; margin-right:6px; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.3);opacity:.7} }
+.act-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.act-type { font-size:11px; color:var(--muted); width:52px; flex-shrink:0; }
+.act-bar-bg { flex:1; height:6px; background:var(--bg); border-radius:10px; overflow:hidden; }
+.act-bar { height:100%; border-radius:10px; transition:width 1s ease; }
+.bar-verde { background:var(--verde-claro); }
+.bar-tierra { background:var(--tierra); }
+.bar-azul { background:#4a9eed; }
+.act-count { font-size:11px; font-weight:600; color:var(--muted); width:28px; text-align:right; }
+
+/* ADMIN PANEL */
+.admin-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; backdrop-filter:blur(4px); align-items:center; justify-content:center; }
+.admin-overlay.open { display:flex; }
+.admin-modal { background:var(--surface); border-radius:16px; width:580px; max-width:96vw; max-height:88vh; overflow-y:auto; box-shadow:0 24px 64px rgba(0,0,0,.3); animation:slideUp .25s ease; }
+.admin-modal-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.admin-modal-title { font-family:var(--font); font-size:17px; font-weight:700; }
+.close-btn { width:32px; height:32px; border-radius:50%; border:none; background:var(--bg); cursor:pointer; font-size:16px; }
+.admin-body { padding:20px 24px; }
+.admin-tabs { display:flex; gap:4px; background:var(--bg); padding:4px; border-radius:10px; margin-bottom:20px; }
+.admin-tab { flex:1; padding:7px; border:none; border-radius:7px; background:none; cursor:pointer; font-size:12px; font-weight:600; color:var(--muted); transition:all .15s; }
+.admin-tab.active { background:var(--surface); color:var(--verde); box-shadow:0 1px 4px rgba(0,0,0,.08); }
+.admin-tab-content { display:none; }
+.admin-tab-content.active { display:block; }
+.submit-btn { width:100%; padding:12px; background:var(--verde); color:#fff; border:none; border-radius:var(--radius-sm); font-family:var(--font); font-size:14px; font-weight:700; cursor:pointer; transition:background .15s; }
+.submit-btn:hover { background:var(--verde-claro); }
+.admin-list-item { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg); border-radius:var(--radius-sm); margin-bottom:8px; }
+.admin-list-title { font-size:13px; font-weight:600; }
+.admin-list-meta  { font-size:11px; color:var(--muted); }
+.del-btn  { font-size:11px; color:#e53935; cursor:pointer; border:none; background:none; padding:4px 8px; border-radius:6px; }
+.del-btn:hover { background:#fef2f2; }
+.form-group { margin-bottom:16px; }
+.form-row   { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-select,.form-textarea { width:100%; padding:10px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--border); background:var(--bg); font-family:var(--font-body); font-size:14px; color:var(--text); outline:none; transition:border .15s; }
+.form-textarea { resize:vertical; min-height:80px; }
+.form-select:focus,.form-textarea:focus { border-color:var(--verde-claro); }
+
+/* TOAST */
+.toast-container { position:fixed; bottom:24px; right:24px; z-index:500; display:flex; flex-direction:column; gap:8px; }
+.toast { background:var(--text); color:#fff; padding:12px 18px; border-radius:10px; font-size:13px; box-shadow:0 8px 24px rgba(0,0,0,.2); animation:slideUp .25s ease; }
+.toast.success { background:var(--verde); }
+.toast.error   { background:#e53935; }
+
+/* MIEMBROS tabla */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+th { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); }
+td { font-size:13px; padding:12px 14px; border-bottom:1px solid var(--bg); }
+tr:hover td { background:var(--bg); }
+.badge-activo    { font-size:10px; font-weight:700; background:#e8f5ed; color:var(--verde); padding:2px 8px; border-radius:10px; }
+.badge-inactivo  { font-size:10px; font-weight:700; background:#fef2f2; color:#e53935; padding:2px 8px; border-radius:10px; }
+.badge-plan      { font-size:10px; font-weight:700; background:#fff3e0; color:var(--tierra); padding:2px 8px; border-radius:10px; }
+
+/* Animaciones */
+@keyframes subir { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+.anim { animation:subir .4s ease forwards; opacity:0; }
+.anim:nth-child(1){animation-delay:.05s} .anim:nth-child(2){animation-delay:.1s}
+.anim:nth-child(3){animation-delay:.15s} .anim:nth-child(4){animation-delay:.2s}
+.anim:nth-child(5){animation-delay:.25s} .anim:nth-child(6){animation-delay:.3s}
+
+@media(max-width:1100px){:root{--rsidebar-w:0}.rsidebar{display:none}}
+@media(max-width:700px){:root{--sidebar-w:0}.sidebar{display:none}.main{padding:14px}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ LOGIN SCREEN ══════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="ico">🌱</div>
+      <h1>AgroClub MX</h1>
+      <p>Comunidad agropecuaria de México</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Correo electrónico</label>
+      <input class="form-input" id="loginEmail" type="email" placeholder="tu@correo.com" autocomplete="email"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contraseña</label>
+      <input class="form-input" id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')iniciarSesion()"/>
+    </div>
+    <p class="login-error" id="loginError"></p>
+    <button class="login-btn" id="loginBtn" onclick="iniciarSesion()">Entrar</button>
+    <p class="reset-link" onclick="resetPassword()">¿Olvidaste tu contraseña? Recupérala aquí</p>
+    <div class="admin-hint" id="adminHint">
+      ⚙️ Cuenta de administrador detectada — acceso completo al panel
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ APP ══════════════════ -->
+<div id="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-ico">🌱</div>
+    <div class="brand-name">AgroClub MX</div>
+    <div class="plan-tag" id="planTag">Miembro</div>
+  </div>
+  <div class="topbar-right">
+    <div class="user-chip">
+      <div class="avatar" id="userAvatar">?</div>
+      <div class="user-info">
+        <div class="name" id="userName">Cargando...</div>
+        <div class="role" id="userRole">—</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="cerrarSesion()">Salir</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="nav-section">Principal</div>
+  <div class="nav-item active" onclick="showView('inicio',this)"><span>🏠</span> Inicio</div>
+  <div class="nav-item" onclick="showView('videos',this)"><span>📹</span> Videos <span class="nav-badge" id="badgeV"></span></div>
+  <div class="nav-item" onclick="showView('lives',this)"><span>🔴</span> Lives</div>
+  <div class="nav-item" onclick="showView('guias',this)"><span>📄</span> Guías PDF</div>
+  <div class="nav-item" onclick="showView('noticias',this)"><span>📰</span> Noticias</div>
+  <div class="nav-section">Biblioteca</div>
+  <div class="nav-item"><span>🌿</span> Abril 2026 <span style="font-size:11px;color:var(--muted)">8</span></div>
+  <div class="nav-item"><span style="color:var(--muted)">🗓</span> <span style="color:var(--muted);font-size:12px">Marzo 2026</span> <span style="font-size:11px;color:var(--muted)">5</span></div>
+  <div class="nav-section">Mi cuenta</div>
+  <div class="nav-item" onclick="showView('perfil',this)"><span>👤</span> Mi perfil</div>
+  <div class="nav-item" id="adminNavItem" style="display:none" onclick="openAdmin()"><span>⚙️</span> Admin Panel</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- INICIO -->
+  <div class="view active" id="view-inicio">
+    <div class="hero-banner">
+      <div class="hero-greeting">¡Hola, <span id="heroName">—</span>! 👋</div>
+      <div class="hero-sub">Tienes contenido nuevo esta semana</div>
+      <div class="hero-stats">
+        <div class="stat-pill anim"><div class="num" id="cntV">—</div><div class="lbl">Videos</div></div>
+        <div class="stat-pill anim"><div class="num" id="cntG">—</div><div class="lbl">Guías</div></div>
+        <div class="stat-pill anim"><div class="num" id="cntL">—</div><div class="lbl">Lives</div></div>
+      </div>
+    </div>
+    <div class="content-card">
+      <div class="section-header"><div class="section-title">🌟 Nuevo esta semana</div></div>
+      <div id="nuevosContainer"><div style="padding:20px;color:var(--muted);font-size:13px">Cargando...</div></div>
+    </div>
+    <div class="content-card">
+      <div class="section-header"><div class="section-title">📚 Biblioteca</div></div>
+      <div id="bibliotecaContainer"></div>
+    </div>
+  </div>
+
+  <!-- VIDEOS -->
+  <div class="view" id="view-videos">
+    <div class="content-card">
+      <div class="section-header"><div class="section-title">📹 Videos agropecuarios</div></div>
+      <div id="videosContainer"></div>
+    </div>
+  </div>
+
+  <!-- LIVES -->
+  <div class="view" id="view-lives">
+    <div class="content-card">
+      <div class="section-header"><div class="section-title">🔴 Sesiones en vivo</div></div>
+      <div id="livesContainer"></div>
+    </div>
+  </div>
+
+  <!-- GUÍAS -->
+  <div class="view" id="view-guias">
+    <div class="content-card">
+      <div class="section-header"><div class="section-title">📄 Guías y recursos</div></div>
+      <div id="guiasContainer"></div>
+    </div>
+  </div>
+
+  <!-- NOTICIAS -->
+  <div class="view" id="view-noticias">
+    <div class="content-card" style="padding:20px">
+      <div class="section-title" style="margin-bottom:16px">📰 Noticias del sector</div>
+      <div id="noticiasContainer"></div>
+    </div>
+  </div>
+
+  <!-- PERFIL -->
+  <div class="view" id="view-perfil">
+    <div class="content-card" style="padding:24px">
+      <div class="section-title" style="margin-bottom:20px">👤 Mi perfil</div>
+      <div id="perfilContainer"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- SIDEBAR DERECHA -->
+<div class="rsidebar">
+  <div class="widget widget-dark">
+    <div class="widget-header">
+      <div class="widget-label">Próxima sesión</div>
+      <div class="widget-title">Q&A Sanidad Avícola</div>
+      <div class="widget-sub">Ing. Morales · Jue 24 · 7PM</div>
+    </div>
+    <div class="countdown">
+      <div class="cd-unit"><div class="cd-num" id="cd-d">02</div><div class="cd-lbl">días</div></div>
+      <div class="cd-unit"><div class="cd-num" id="cd-h">08</div><div class="cd-lbl">hrs</div></div>
+      <div class="cd-unit"><div class="cd-num" id="cd-m">40</div><div class="cd-lbl">min</div></div>
+    </div>
+    <button class="widget-btn btn-verde">Agregar al calendario</button>
+  </div>
+  <div class="widget">
+    <div class="wa-widget">
+      <div style="margin-bottom:6px"><span class="wa-dot"></span><strong style="font-size:13px">Grupo WhatsApp</strong></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">🌾 52 productores activos</div>
+      <button class="widget-btn btn-verde" style="width:100%;margin:0">Abrir grupo</button>
+    </div>
+  </div>
+  <div class="widget" style="background:#fff8ee;border-color:#f5d9a8">
+    <div class="wa-widget">
+      <div style="font-size:12px;font-weight:700;color:var(--tierra);margin-bottom:4px">🎁 Tu descuento 20%</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">En cursos de AgroTec</div>
+      <button class="widget-btn btn-tierra" style="width:100%;margin:0">Ver cursos</button>
+    </div>
+  </div>
+  <div class="widget">
+    <div style="padding:14px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:10px">📈 Mi actividad</div>
+      <div class="act-row"><div class="act-type">Videos</div><div class="act-bar-bg"><div class="act-bar bar-verde" id="barV" style="width:0%"></div></div><div class="act-count" id="actV">—</div></div>
+      <div class="act-row"><div class="act-type">Guías</div><div class="act-bar-bg"><div class="act-bar bar-tierra" id="barG" style="width:0%"></div></div><div class="act-count" id="actG">—</div></div>
+      <div class="act-row"><div class="act-type">Lives</div><div class="act-bar-bg"><div class="act-bar bar-azul" id="barL" style="width:0%"></div></div><div class="act-count" id="actL">—</div></div>
+    </div>
+  </div>
+  <div class="widget">
+    <div style="padding:14px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">🏆 Certificado abril</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Completa 4/5 videos + live</div>
+      <button class="widget-btn btn-morado" style="width:100%;margin:0">Ver progreso</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- ══════════════════ ADMIN OVERLAY ══════════════════ -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-modal">
+    <div class="admin-modal-header">
+      <div class="admin-modal-title">⚙️ Panel de Administración</div>
+      <button class="close-btn" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="admin-body">
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="aTab('contenido',this)">📦 Contenido</button>
+        <button class="admin-tab" onclick="aTab('miembros',this)">👥 Miembros</button>
+        <button class="admin-tab" onclick="aTab('noticias2',this)">📰 Noticias</button>
+      </div>
+
+      <!-- TAB CONTENIDO -->
+      <div class="admin-tab-content active" id="tab-contenido">
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" id="tipoC"><option value="video">📹 Video</option><option value="guia">📄 Guía PDF</option><option value="live">🔴 Live / Sesión</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="tituloC" placeholder="Ej: Biofloc en tilapia"/></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Autor</label><input class="form-input" id="autorC" placeholder="Ing. Morales"/></div>
+          <div class="form-group"><label class="form-label">Duración / Páginas</label><input class="form-input" id="durC" placeholder="15 min"/></div>
+        </div>
+        <div class="form-group"><label class="form-label">Categoría</label><input class="form-input" id="catC" placeholder="Acuicultura, Ganadería..."/></div>
+        <div class="form-group"><label class="form-label">URL del contenido</label><input class="form-input" id="urlC" placeholder="https://..."/></div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:16px;cursor:pointer"><input type="checkbox" id="nuevoC" checked style="width:14px;height:14px"> Marcar como NUEVO</label>
+        <button class="submit-btn" onclick="agregarContenido()">+ Agregar contenido</button>
+        <div style="margin-top:20px" id="listaContenido"></div>
+      </div>
+
+      <!-- TAB MIEMBROS -->
+      <div class="admin-tab-content" id="tab-miembros">
+        <div style="margin-bottom:12px;font-size:12px;color:var(--muted)">Miembros registrados en Firebase (en tiempo real)</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Nombre</th><th>Email</th><th>Plan</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody id="tablaMiembros"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Cargando miembros...</td></tr></tbody>
+        </table></div>
+      </div>
+
+      <!-- TAB NOTICIAS -->
+      <div class="admin-tab-content" id="tab-noticias2">
+        <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="titN" placeholder="Nueva NOM para alimentos..."/></div>
+        <div class="form-group"><label class="form-label">Resumen</label><textarea class="form-textarea" id="texN" placeholder="Descripción breve..."></textarea></div>
+        <div class="form-group"><label class="form-label">Link (opcional)</label><input class="form-input" id="urlN" placeholder="https://..."/></div>
+        <button class="submit-btn" onclick="agregarNoticia()">+ Publicar noticia</button>
+        <div style="margin-top:20px" id="listaNoticias"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<!-- ══════════════════ JAVASCRIPT ══════════════════ -->
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+// UID del administrador — cámbialo por el tuyo después del primer login
+// Ve a Firebase Console → Authentication → Users → copia el UID de tu cuenta
+const ADMIN_UID = "hWrHpdn8FnUKwyPFU2EiiklayLO2";
+
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+let currentUser  = null;
+let esAdmin      = false;
+let contenidos   = [];
+let lives        = [];
+let noticias     = [];
+
+// ── Auth listener ────────────────────────────────────────────────────────────
+auth.onAuthStateChanged(async user => {
+  if (user) {
+    currentUser = user;
+    esAdmin     = user.uid === ADMIN_UID;
+    await cargarPerfil(user);
+    mostrarApp();
+    cargarContenido();
+    startCountdown();
+  } else {
+    currentUser = null;
+    esAdmin     = false;
+    mostrarLogin();
+  }
+});
+
+// ── Login ────────────────────────────────────────────────────────────────────
+async function iniciarSesion() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginError');
+
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Entrando...';
+
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged se encarga del resto
+  } catch (e) {
+    let msg = 'Correo o contraseña incorrectos';
+    if (e.code === 'auth/user-not-found')    msg = 'No existe una cuenta con ese correo';
+    if (e.code === 'auth/wrong-password')    msg = 'Contraseña incorrecta';
+    if (e.code === 'auth/too-many-requests') msg = 'Demasiados intentos. Espera unos minutos';
+    err.textContent  = msg;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+}
+
+async function resetPassword() {
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email) { toast('Escribe tu correo primero','error'); return; }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    toast('✅ Revisa tu correo para restablecer tu contraseña','success');
+  } catch (e) {
+    toast('No se encontró ese correo','error');
+  }
+}
+
+async function cerrarSesion() {
+  await auth.signOut();
+}
+
+// ── UI helpers ───────────────────────────────────────────────────────────────
+function mostrarLogin() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+function mostrarApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+async function cargarPerfil(user) {
+  const inicial = (user.displayName || user.email || '?')[0].toUpperCase();
+  document.getElementById('userAvatar').textContent = inicial;
+  document.getElementById('heroName').textContent   = user.displayName?.split(' ')[0] || user.email.split('@')[0];
+  document.getElementById('userName').textContent   = user.displayName || user.email;
+
+  // Leer plan de Firestore
+  try {
+    const doc = await db.collection('miembros').doc(user.uid).get();
+    if (doc.exists) {
+      const d = doc.data();
+      const planLabel = { fundador:'Fundador 🌱', anual:'Anual', mensual:'Mensual', trimestral:'Trimestral' };
+      document.getElementById('planTag').textContent  = planLabel[d.plan] || 'Miembro';
+      document.getElementById('userRole').textContent = planLabel[d.plan] || 'Miembro';
+    }
+  } catch(e) {}
+
+  if (esAdmin) {
+    document.getElementById('planTag').textContent   = 'Admin ⚙️';
+    document.getElementById('userRole').textContent  = 'Administrador';
+    document.getElementById('adminNavItem').style.display = 'flex';
+  }
+}
+
+// ── Vistas ───────────────────────────────────────────────────────────────────
+function showView(id, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  if (el) el.classList.add('active');
+  if (id === 'perfil') renderPerfil();
+  if (id === 'miembros' && esAdmin) cargarMiembros();
+}
+
+// ── Firestore: cargar contenido ──────────────────────────────────────────────
+function cargarContenido() {
+  // Contenidos (videos + guías)
+  db.collection('contenidos').orderBy('creadoEn','desc').onSnapshot(snap => {
+    contenidos = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderContenido();
+  });
+  // Lives
+  db.collection('lives').orderBy('fecha','desc').onSnapshot(snap => {
+    lives = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderLives();
+  });
+  // Noticias
+  db.collection('noticias').orderBy('creadoEn','desc').onSnapshot(snap => {
+    noticias = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderNoticias();
+  });
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function iconoTipo(t) { return {video:'📹',guia:'📄',live:'🔴'}[t]||'📦'; }
+function thumbTipo(t) { return {video:'thumb-video',guia:'thumb-pdf',live:'thumb-live'}[t]||'thumb-pdf'; }
+
+function renderItem(c) {
+  const tag = c.nuevo ? '<span class="tag-nuevo">Nuevo</span>' : '<span class="tag-visto">Visto</span>';
+  return `<div class="content-item anim" onclick="abrirContenido('${c.url||'#'}')">
+    <div class="item-thumb ${thumbTipo(c.tipo)}">${iconoTipo(c.tipo)}</div>
+    <div class="item-info">
+      <div class="item-title">${c.titulo}</div>
+      <div class="item-meta">${c.autor||''} · ${c.categoria||''} · ${c.duracion||''}</div>
+    </div>
+    <div class="item-right">${tag}<button class="ver-btn">▶ Ver</button></div>
+  </div>`;
+}
+
+function renderContenido() {
+  const videos = contenidos.filter(c=>c.tipo==='video');
+  const guias  = contenidos.filter(c=>c.tipo==='guia');
+  const nuevos = contenidos.filter(c=>c.nuevo).slice(0,3);
+
+  document.getElementById('cntV').textContent = videos.length;
+  document.getElementById('cntG').textContent = guias.length;
+  document.getElementById('cntL').textContent = lives.length;
+
+  document.getElementById('nuevosContainer').innerHTML   = nuevos.length ? nuevos.map(renderItem).join('') : '<div style="padding:20px;color:var(--muted);font-size:13px">Sin contenido nuevo esta semana</div>';
+  document.getElementById('bibliotecaContainer').innerHTML = contenidos.slice(0,8).map(renderItem).join('');
+  document.getElementById('videosContainer').innerHTML   = videos.map(renderItem).join('') || '<div style="padding:20px;color:var(--muted);font-size:13px">Aún no hay videos</div>';
+  document.getElementById('guiasContainer').innerHTML    = guias.map(renderItem).join('')  || '<div style="padding:20px;color:var(--muted);font-size:13px">Aún no hay guías</div>';
+
+  // Badges
+  const nV = contenidos.filter(c=>c.nuevo&&c.tipo==='video').length;
+  const bV = document.getElementById('badgeV');
+  bV.textContent = nV||''; bV.style.display = nV ? 'inline' : 'none';
+
+  // Barras actividad
+  setTimeout(()=>{
+    const vP = videos.length ? Math.round(Math.min(5,videos.length)/videos.length*100) : 0;
+    const gP = guias.length  ? Math.round(Math.min(3,guias.length)/guias.length*100)   : 0;
+    const lP = lives.length  ? Math.round(Math.min(2,lives.length)/lives.length*100)   : 0;
+    document.getElementById('barV').style.width = vP+'%';
+    document.getElementById('barG').style.width = gP+'%';
+    document.getElementById('barL').style.width = lP+'%';
+    document.getElementById('actV').textContent = `${Math.min(5,videos.length)}/${videos.length}`;
+    document.getElementById('actG').textContent = `${Math.min(3,guias.length)}/${guias.length}`;
+    document.getElementById('actL').textContent = `${Math.min(2,lives.length)}/${lives.length}`;
+  }, 500);
+
+  // Admin: lista en panel
+  if (esAdmin) renderAdminContenido();
+}
+
+function renderLives() {
+  document.getElementById('cntL').textContent = lives.length;
+  document.getElementById('livesContainer').innerHTML = lives.map(l=>`
+    <div class="content-item anim">
+      <div class="item-thumb thumb-live">🔴</div>
+      <div class="item-info">
+        <div class="item-title">${l.titulo}</div>
+        <div class="item-meta">${l.ponente||''} · ${l.fecha||''} · ${l.hora||''}</div>
+      </div>
+      <div class="item-right">
+        ${l.estado==='proximo'?'<span class="tag-proximo">Próximo</span>':'<span class="tag-visto">Grabación</span>'}
+        <button class="ver-btn">${l.estado==='proximo'?'📅 Unirse':'▶ Ver'}</button>
+      </div>
+    </div>`).join('') || '<div style="padding:20px;color:var(--muted);font-size:13px">No hay lives programados</div>';
+}
+
+function renderNoticias() {
+  document.getElementById('noticiasContainer').innerHTML = noticias.map(n=>`
+    <div style="padding:16px;background:var(--bg);border-radius:10px;margin-bottom:10px;cursor:pointer" class="anim" onclick="window.open('${n.link||'#'}','_blank')">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${n.fecha||''}</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">${n.titulo}</div>
+      <div style="font-size:12px;color:var(--muted)">${n.texto||''}</div>
+    </div>`).join('') || '<div style="padding:20px;color:var(--muted)">Sin noticias aún</div>';
+  if (esAdmin) renderAdminNoticias();
+}
+
+function renderPerfil() {
+  if (!currentUser) return;
+  db.collection('miembros').doc(currentUser.uid).get().then(doc => {
+    const d = doc.exists ? doc.data() : {};
+    const rows = [
+      ['Nombre',    currentUser.displayName || '—'],
+      ['Email',     currentUser.email],
+      ['Plan',      d.plan || '—'],
+      ['Estado',    d.estado || 'activo'],
+      ['Teléfono',  d.telefono || '—'],
+    ];
+    document.getElementById('perfilContainer').innerHTML = rows.map(r=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px;color:var(--muted)">${r[0]}</span>
+        <span style="font-size:14px;font-weight:600">${r[1]}</span>
+      </div>`).join('');
+  });
+}
+
+function abrirContenido(url) { if (url && url !== '#') window.open(url,'_blank'); }
+
+// ── Admin: operaciones Firestore ─────────────────────────────────────────────
+async function agregarContenido() {
+  if (!esAdmin) return;
+  const titulo = document.getElementById('tituloC').value.trim();
+  const autor  = document.getElementById('autorC').value.trim();
+  if (!titulo || !autor) { toast('Completa título y autor','error'); return; }
+  try {
+    await db.collection('contenidos').add({
+      tipo:      document.getElementById('tipoC').value,
+      titulo,
+      autor,
+      duracion:  document.getElementById('durC').value.trim() || '—',
+      categoria: document.getElementById('catC').value.trim() || 'General',
+      url:       document.getElementById('urlC').value.trim() || '#',
+      nuevo:     document.getElementById('nuevoC').checked,
+      creadoEn:  firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    ['tituloC','autorC','durC','catC','urlC'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('nuevoC').checked = true;
+    toast('✅ Contenido agregado','success');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function eliminarContenido(id) {
+  if (!esAdmin) return;
+  await db.collection('contenidos').doc(id).delete();
+  toast('Eliminado','success');
+}
+
+async function agregarNoticia() {
+  if (!esAdmin) return;
+  const titulo = document.getElementById('titN').value.trim();
+  if (!titulo) { toast('Escribe el título','error'); return; }
+  const hoy = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
+  await db.collection('noticias').add({
+    titulo,
+    texto:    document.getElementById('texN').value.trim(),
+    link:     document.getElementById('urlN').value.trim() || '#',
+    fecha:    hoy,
+    creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+  ['titN','texN','urlN'].forEach(id => document.getElementById(id).value = '');
+  toast('✅ Noticia publicada','success');
+}
+
+async function eliminarNoticia(id) {
+  await db.collection('noticias').doc(id).delete();
+  toast('Eliminada','success');
+}
+
+function renderAdminContenido() {
+  document.getElementById('listaContenido').innerHTML =
+    '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Contenido actual</div>' +
+    contenidos.map(c=>`<div class="admin-list-item">
+      <div><div class="admin-list-title">${iconoTipo(c.tipo)} ${c.titulo}</div><div class="admin-list-meta">${c.autor||''}</div></div>
+      <button class="del-btn" onclick="eliminarContenido('${c.id}')">🗑</button>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:13px">Sin contenido</div>';
+}
+
+function renderAdminNoticias() {
+  document.getElementById('listaNoticias').innerHTML =
+    '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 10px">Noticias publicadas</div>' +
+    noticias.map(n=>`<div class="admin-list-item">
+      <div><div class="admin-list-title">📰 ${n.titulo}</div><div class="admin-list-meta">${n.fecha||''}</div></div>
+      <button class="del-btn" onclick="eliminarNoticia('${n.id}')">🗑</button>
+    </div>`).join('');
+}
+
+async function cargarMiembros() {
+  try {
+    const snap = await db.collection('miembros').get();
+    const rows = snap.docs.map(d => {
+      const m = d.data();
+      return `<tr>
+        <td style="font-weight:600">${m.nombre||'—'}</td>
+        <td>${m.email||'—'}</td>
+        <td><span class="badge-plan">${m.plan||'—'}</span></td>
+        <td>${m.estado==='activo'?'<span class="badge-activo">Activo</span>':'<span class="badge-inactivo">Inactivo</span>'}</td>
+        <td><button class="del-btn" onclick="desactivarMiembro('${d.id}')">Suspender</button></td>
+      </tr>`;
+    });
+    document.getElementById('tablaMiembros').innerHTML = rows.join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Sin miembros registrados aún</td></tr>';
+  } catch(e) { console.error(e); }
+}
+
+async function desactivarMiembro(uid) {
+  await db.collection('miembros').doc(uid).update({ estado: 'inactivo' });
+  toast('Miembro suspendido','success');
+  cargarMiembros();
+}
+
+// ── Admin overlay ────────────────────────────────────────────────────────────
+function openAdmin() {
+  if (!esAdmin) return;
+  document.getElementById('adminOverlay').classList.add('open');
+}
+function closeAdmin() { document.getElementById('adminOverlay').classList.remove('open'); }
+function aTab(id, btn) {
+  document.querySelectorAll('.admin-tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'miembros') cargarMiembros();
+}
+document.addEventListener('click', e => { if (e.target===document.getElementById('adminOverlay')) closeAdmin(); });
+
+// ── Countdown ────────────────────────────────────────────────────────────────
+function startCountdown() {
+  const target = new Date(); target.setDate(target.getDate()+2); target.setHours(19,0,0,0);
+  setInterval(()=>{
+    const diff = target - new Date();
+    if (diff <= 0) return;
+    const d=Math.floor(diff/86400000), h=Math.floor((diff%86400000)/3600000), m=Math.floor((diff%3600000)/60000);
+    document.getElementById('cd-d').textContent = String(d).padStart(2,'0');
+    document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+    document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+  }, 1000);
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+}
+</script>
+</body>
+</html>
